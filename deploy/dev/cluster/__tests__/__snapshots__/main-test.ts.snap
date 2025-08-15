@@ -1,0 +1,84 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`KindClusterStack Snapshot Tests should match the expected Terraform configuration snapshot 1`] = `
+"{
+  "provider": {
+    "kubernetes": [
+      {
+        "config_context": "kind-kind",
+        "config_path": "~/.kube/config"
+      }
+    ],
+    "null": [
+      {
+      }
+    ]
+  },
+  "resource": {
+    "kubernetes_config_map_v1": {
+      "local-registry-hosting": {
+        "data": {
+          "localRegistryHosting.v1": "host: \\"localhost:5001\\"\\nhelp: \\"https://kind.sigs.k8s.io/docs/user/local-registry/\\""
+        },
+        "depends_on": [
+          "null_resource.network-connection"
+        ],
+        "metadata": {
+          "name": "local-registry-hosting",
+          "namespace": "kube-public"
+        }
+      }
+    },
+    "null_resource": {
+      "kind-cluster": {
+        "provisioner": [
+          {
+            "local-exec": {
+              "command": "echo 'kind: Cluster\\napiVersion: kind.x-k8s.io/v1alpha4\\ncontainerdConfigPatches:\\n- |-\\n  [plugins.\\"io.containerd.grpc.v1.cri\\".registry]\\n    config_path = \\"/etc/containerd/certs.d\\"\\nnodes:\\n- role: control-plane\\n  extraPortMappings:\\n  - containerPort: 30080\\n    hostPort: 80\\n    protocol: TCP\\n  - containerPort: 30443\\n    hostPort: 443\\n    protocol: TCP' | kind create cluster --config=-"
+            }
+          }
+        ],
+        "triggers": {
+          "config": "kind: Cluster\\napiVersion: kind.x-k8s.io/v1alpha4\\ncontainerdConfigPatches:\\n- |-\\n  [plugins.\\"io.containerd.grpc.v1.cri\\".registry]\\n    config_path = \\"/etc/containerd/certs.d\\"\\nnodes:\\n- role: control-plane\\n  extraPortMappings:\\n  - containerPort: 30080\\n    hostPort: 80\\n    protocol: TCP\\n  - containerPort: 30443\\n    hostPort: 443\\n    protocol: TCP"
+        }
+      },
+      "network-connection": {
+        "depends_on": [
+          "null_resource.registry-config"
+        ],
+        "provisioner": [
+          {
+            "local-exec": {
+              "command": "\\n            if [ \\"$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' \\"kind-registry\\")\\" = 'null' ]; then\\n              docker network connect \\"kind\\" \\"kind-registry\\"\\n            fi\\n          "
+            }
+          }
+        ]
+      },
+      "registry-config": {
+        "depends_on": [
+          "null_resource.kind-cluster"
+        ],
+        "provisioner": [
+          {
+            "local-exec": {
+              "command": "\\n            REGISTRY_DIR=\\"/etc/containerd/certs.d/localhost:5001\\"\\n            for node in $(kind get nodes); do\\n              docker exec \\"$node\\" mkdir -p \\"$REGISTRY_DIR\\"\\n              echo '[host.\\"http://kind-registry:5000\\"]' | docker exec -i \\"$node\\" cp /dev/stdin \\"$REGISTRY_DIR/hosts.toml\\"\\n            done\\n          "
+            }
+          }
+        ]
+      }
+    }
+  },
+  "terraform": {
+    "required_providers": {
+      "kubernetes": {
+        "source": "hashicorp/kubernetes",
+        "version": "2.38.0"
+      },
+      "null": {
+        "source": "hashicorp/null",
+        "version": "3.2.4"
+      }
+    }
+  }
+}"
+`;

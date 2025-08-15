@@ -1,0 +1,13 @@
+{
+  "language": "typescript",
+  "app": "npx ts-node main.ts",
+  "projectId": "zitadel-configurations",
+  "sendCrashReports": "false",
+  "terraformProviders": [
+    "zitadel/zitadel@~> 1.0"
+  ],
+  "terraformModules": [],
+  "context": {
+
+  }
+}

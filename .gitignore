@@ -1,0 +1,6 @@
+.idea/
+.j*n*/
+/target
+/node_modules
+/*-fullsynth.json
+/*.tfstate*

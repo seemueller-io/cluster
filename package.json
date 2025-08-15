@@ -1,0 +1,12 @@
+{
+  "workspaces": [
+    "deploy/dev/cluster",
+    "deploy/dev/configurations",
+    "deploy/dev/components"
+  ],
+  "scripts": {
+    "setup": "packages/scripts/setup.sh",
+    "clean": "packages/scripts/cleanup.sh",
+    "dev": "packages/scripts/dev.sh"
+  }
+}
