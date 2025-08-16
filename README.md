@@ -23,114 +23,67 @@ packages/
 ## Architecture
 
 ```mermaid
-%%{init: {
-  'theme': 'default',
-  'flowchart': { 'rankSpacing': 60, 'nodeSpacing': 60, 'diagramPadding': 48, 'htmlLabels': true },
-  'themeVariables': { 'fontSize': '18px', 'fontFamily': 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, sans-serif' }
-}}%%
-flowchart TB
+flowchart LR
 
-%% =========================
-%% Local Machine (Entry Path)
-%% =========================
-subgraph local[Local Machine]
+%% ===== Local Machine =====
+subgraph L[Local Machine]
 direction TB
-user[Developer Browser]
-proxy[localhost-proxy<br/>HTTP → HTTPS]
-host[localhost Port<br/>Mapping Layer]
-registry[Local Docker Registry<br/>localhost:5001]
-user -->|HTTP :3000| proxy
-proxy -->|HTTPS :443| host
+  user[Developer Browser]
+  proxy[localhost-proxy HTTP]
+  host[Port Mapping Layer]
+  registry[Local Docker Registry]
+
+  user -->|HTTP 3000| proxy
+  proxy -->|HTTPS 443| host
 end
 
-%% =========================
-%% Kind Cluster (Platform)
-%% =========================
-subgraph clusterSG[Kind Cluster — Local Kubernetes]
+%% ===== Kind Cluster =====
+subgraph K[Kind Cluster]
 direction TB
+  ingress[Ingress Controller]
+  exampleApp[Example Web App]
+  apps[Backend Services]
+  zitadel[ZITADEL IAM]
+  pg[(PostgreSQL Identity Store)]
+  cert[Cert-Manager]
 
-%% Edge / Entry
-ingress[Ingress Controller<br/>Kubernetes Entry Point]
+  %% Routing
+  ingress --> exampleApp
+  ingress --> apps
 
-%% Workloads behind ingress
-subgraph workloads[Workloads]
-direction LR
-exampleApp[Example Web App<br/>Frontend UI]
-apps[Backend Services<br/>Microservices API]
+  %% OIDC
+  exampleApp -->|OIDC: /authorize, /callback| zitadel
+  apps -->|Validate OIDC tokens| zitadel
+  zitadel --> pg
+
+  %% TLS automation (dotted)
+  cert -.-> ingress
+  cert -.-> exampleApp
+  cert -.-> apps
+  cert -.-> zitadel
 end
 
-%% Identity & Data
-subgraph iam[Identity & Access]
-direction TB
-zitadel[ZITADEL IAM<br/>OIDC Provider]
-pg[(PostgreSQL<br/>Identity Store)]
-zitadel --> pg
-end
+%% ===== Local ⇄ Cluster =====
+host -->|80 -> 30080, 443 -> 30443| ingress
 
-%% Cluster automation
-cert[Cert-Manager<br/>Automated TLS]
-
-%% Ingress routing to services
-ingress --> exampleApp
-ingress --> apps
-
-%% OIDC flows
-exampleApp -->|OIDC: /authorize, /callback| zitadel
-apps -->|Validate OIDC tokens| zitadel
-
-%% Cert-manager relationships (dotted = automation/control)
-cert -.-> ingress
-cert -.-> exampleApp
-cert -.-> apps
-cert -.-> zitadel
-end
-
-%% =========================
-%% Image pulls into the cluster
-%% =========================
+%% ===== Images into the cluster =====
 registry -->|image pulls| exampleApp
 registry -->|image pulls| apps
 
-%% =========================
-%% Local → Cluster networking
-%% =========================
-host -->|80 → 30080<br/>443 → 30443| ingress
-
-%% =========================
-%% CDKTF Stacks (Provision & Configure)
-%% =========================
-subgraph cdk[CDKTF Stacks]
+%% ===== CDKTF Stacks =====
+subgraph T[CDKTF Stacks]
 direction TB
-clusterStack[cluster — Provisions K8s]
-componentsStack[components — Ingress, Cert-Manager, ZITADEL]
-configurationsStack[configurations — App Deployments & Config]
+  clusterStack[cluster]
+  componentsStack[components]
+  configurationsStack[configurations]
 end
 
-%% Show where each stack applies
 clusterStack --> ingress
 componentsStack --> ingress
 componentsStack --> cert
 componentsStack --> zitadel
 configurationsStack --> exampleApp
 configurationsStack --> apps
-
-%% =========================
-%% Visual styling
-%% =========================
-classDef external fill:#E8F1FF,stroke:#3B82F6,color:#111,stroke-width:1px;
-classDef service  fill:#F8FAFC,stroke:#64748B,color:#111,stroke-width:1px;
-classDef identity fill:#FFF7E6,stroke:#F59E0B,color:#111,stroke-width:1px;
-classDef data     fill:#FDEDED,stroke:#EF4444,color:#111,stroke-width:1px;
-classDef ops      fill:#ECFDF5,stroke:#10B981,color:#111,stroke-width:1px;
-classDef infra    fill:#EEF2FF,stroke:#6366F1,color:#111,stroke-width:1px;
-
-class user,proxy,host,registry external
-class ingress,workloads infra
-class exampleApp,apps service
-class zitadel identity
-class pg data
-class cert ops
-class clusterStack,componentsStack,configurationsStack infra
 
 ```
 
