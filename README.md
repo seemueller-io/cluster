@@ -87,7 +87,7 @@ configurationsStack --> apps
 
 ```
 
-Access the dev UI at http://localhost:3000. The localhost-proxy accepts HTTP on port 3000 and forwards HTTPS to localhost:443; the Kind cluster maps host ports 80 -> 30080 and 443 -> 30443 to the ingress controller inside the cluster. Traffic is routed through ingress to services secured by ZITADEL and PostgreSQL, with Cert-Manager handling TLS. CDKTF provisions the cluster, core components, and app configs, using a local Docker registry for images.
+The localhost-proxy accepts HTTP on port 3000 and forwards HTTPS to localhost:443; the Kind cluster maps host ports 80 -> 30080 and 443 -> 30443 to the ingress controller inside the cluster. Traffic is routed through ingress to services secured by ZITADEL and PostgreSQL, with Cert-Manager handling TLS. CDKTF provisions the cluster, core components, and app configs, using a local Docker registry for images.
 
 ## Developer Notes
 For platforms other than Darwin, you'll need to trust root certificates manually.
