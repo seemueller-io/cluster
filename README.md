@@ -29,7 +29,7 @@ flowchart LR
 subgraph L[Local Machine]
 direction TB
   user[Developer Browser]
-  proxy[localhost-proxy HTTP]
+  proxy[dev-proxy HTTP]
   host[Port Mapping Layer]
   registry[Local Docker Registry]
 
@@ -87,7 +87,7 @@ configurationsStack --> apps
 
 ```
 
-The localhost-proxy accepts HTTP on port 3000 and forwards HTTPS to the ingress controller inside the Kind cluster. Traffic is routed through ingress to services secured by ZITADEL and PostgreSQL, with Cert-Manager handling TLS. CDKTF provisions the cluster, core components, and app configs.
+The dev-proxy accepts HTTP on port 3000 and forwards HTTPS to the ingress controller inside the Kind cluster. Traffic is routed through ingress to services secured by ZITADEL and PostgreSQL, with Cert-Manager handling TLS. CDKTF provisions the cluster, core components, and app configs.
 
 ## Developer Notes
 For platforms other than Darwin, you'll need to trust root certificates manually.

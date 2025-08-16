@@ -1,3 +1,3 @@
 [workspace]
-members = ["packages/localhost-proxy"]
+members = ["packages/dev-proxy"]
 resolver = "3"

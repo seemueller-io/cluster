@@ -1,1 +1,0 @@
-This server brokers https requests to http to make development easier. 

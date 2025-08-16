@@ -1,11 +1,11 @@
 [package]
-name = "localhost-proxy"
+name = "dev-proxy"
 version = "0.1.0"
 edition = "2024"
 authors = ["Geoff Seemueller <28698553+geoffsee@users.noreply.github.com>"]
 
 [[bin]]
-name = "localhost-proxy"
+name = "dev-proxy"
 path = "src/main.rs"
 
 [dependencies]
