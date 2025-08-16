@@ -23,68 +23,118 @@ packages/
 ## Architecture
 
 ```mermaid
-flowchart LR
+%%{init: {
+  'theme': 'default',
+  'flowchart': { 'rankSpacing': 60, 'nodeSpacing': 60, 'diagramPadding': 48, 'htmlLabels': true },
+  'themeVariables': { 'fontSize': '18px', 'fontFamily': 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans, sans-serif' }
+}}%%
+flowchart TB
 
 %% =========================
-%% External -> Local Host
+%% Local Machine (Entry Path)
 %% =========================
-    user[Developer Browser]
-    proxy[localhost-proxy HTTPS to HTTP]
-    host[localhost Port Mapping Layer]
-
-    user -->|HTTPS 443| proxy
-    proxy -->|HTTP 80| host
-    host -->|80 -> 30080, 443 -> 30443| ingress
-
-%% =========================
-%% Kind Cluster
-%% =========================
-    subgraph clusterSG[Kind Cluster - Local Kubernetes]
-        direction TB
-
-        ingress[Ingress Controller - Kubernetes Entry Point]
-        exampleApp[Example Web App - Frontend UI]
-        apps[Example Backend Services - Microservices API]
-        zitadel[ZITADEL IAM - OIDC Provider]
-        pg[PostgreSQL Identity Store]
-        cert[Cert-Manager - Automated TLS]
-
-    %% Ingress routing
-        ingress --> exampleApp
-        ingress --> apps
-
-    %% ZITADEL fronting the app
-        exampleApp -->|OIDC: /authorize, /callback| zitadel
-        apps -->|Validate OIDC tokens| zitadel
-        zitadel --> pg
-
-    %% Cert relationships (dotted to indicate control/automation)
-        cert -.-> ingress
-        cert -.-> exampleApp
-        cert -.-> apps
-        cert -.-> zitadel
-    end
+subgraph local[Local Machine]
+direction TB
+user[Developer Browser]
+proxy[localhost-proxy<br/>HTTP → HTTPS]
+host[localhost Port<br/>Mapping Layer]
+registry[Local Docker Registry<br/>localhost:5001]
+user -->|HTTP :3000| proxy
+proxy -->|HTTPS :443| host
+end
 
 %% =========================
-%% Local Registry
+%% Kind Cluster (Platform)
 %% =========================
-    registry[Local Docker Registry localhost:5001]
-    registry --> clusterSG
+subgraph clusterSG[Kind Cluster — Local Kubernetes]
+direction TB
+
+%% Edge / Entry
+ingress[Ingress Controller<br/>Kubernetes Entry Point]
+
+%% Workloads behind ingress
+subgraph workloads[Workloads]
+direction LR
+exampleApp[Example Web App<br/>Frontend UI]
+apps[Backend Services<br/>Microservices API]
+end
+
+%% Identity & Data
+subgraph iam[Identity & Access]
+direction TB
+zitadel[ZITADEL IAM<br/>OIDC Provider]
+pg[(PostgreSQL<br/>Identity Store)]
+zitadel --> pg
+end
+
+%% Cluster automation
+cert[Cert-Manager<br/>Automated TLS]
+
+%% Ingress routing to services
+ingress --> exampleApp
+ingress --> apps
+
+%% OIDC flows
+exampleApp -->|OIDC: /authorize, /callback| zitadel
+apps -->|Validate OIDC tokens| zitadel
+
+%% Cert-manager relationships (dotted = automation/control)
+cert -.-> ingress
+cert -.-> exampleApp
+cert -.-> apps
+cert -.-> zitadel
+end
 
 %% =========================
-%% CDKTF Stacks
+%% Image pulls into the cluster
 %% =========================
-    subgraph cdk[CDKTF Stacks]
-        direction TB
-        clusterStack[cluster - Provisions K8s]
-        componentsStack[components - Ingress, Cert-Manager, ZITADEL]
-        configurationsStack[configurations - App Deployments and Config]
-    end
+registry -->|image pulls| exampleApp
+registry -->|image pulls| apps
 
-    cdk -->|deploys| clusterSG
+%% =========================
+%% Local → Cluster networking
+%% =========================
+host -->|80 → 30080<br/>443 → 30443| ingress
+
+%% =========================
+%% CDKTF Stacks (Provision & Configure)
+%% =========================
+subgraph cdk[CDKTF Stacks]
+direction TB
+clusterStack[cluster — Provisions K8s]
+componentsStack[components — Ingress, Cert-Manager, ZITADEL]
+configurationsStack[configurations — App Deployments & Config]
+end
+
+%% Show where each stack applies
+clusterStack --> ingress
+componentsStack --> ingress
+componentsStack --> cert
+componentsStack --> zitadel
+configurationsStack --> exampleApp
+configurationsStack --> apps
+
+%% =========================
+%% Visual styling
+%% =========================
+classDef external fill:#E8F1FF,stroke:#3B82F6,color:#111,stroke-width:1px;
+classDef service  fill:#F8FAFC,stroke:#64748B,color:#111,stroke-width:1px;
+classDef identity fill:#FFF7E6,stroke:#F59E0B,color:#111,stroke-width:1px;
+classDef data     fill:#FDEDED,stroke:#EF4444,color:#111,stroke-width:1px;
+classDef ops      fill:#ECFDF5,stroke:#10B981,color:#111,stroke-width:1px;
+classDef infra    fill:#EEF2FF,stroke:#6366F1,color:#111,stroke-width:1px;
+
+class user,proxy,host,registry external
+class ingress,workloads infra
+class exampleApp,apps service
+class zitadel identity
+class pg data
+class cert ops
+class clusterStack,componentsStack,configurationsStack infra
+
 ```
 
-Local HTTPS traffic is proxied to the Kind cluster via port mappings, routed through ingress to services secured by ZITADEL and PostgreSQL, with Cert-Manager handling TLS. CDKTF provisions the cluster, core components, and app configs, using a local Docker registry for images.
+Access the dev UI at http://localhost:3000. The localhost-proxy accepts HTTP on port 3000 and forwards HTTPS to localhost:443; the Kind cluster maps host ports 80 -> 30080 and 443 -> 30443 to the ingress controller inside the cluster. Traffic is routed through ingress to services secured by ZITADEL and PostgreSQL, with Cert-Manager handling TLS. CDKTF provisions the cluster, core components, and app configs, using a local Docker registry for images.
 
 ## Developer Notes
 For platforms other than Darwin, you'll need to trust root certificates manually.
