@@ -5,8 +5,9 @@
     "deploy/dev/components"
   ],
   "scripts": {
+    "dev": "packages/scripts/run.sh",
     "setup": "packages/scripts/setup.sh",
     "clean": "packages/scripts/cleanup.sh",
-    "dev": "packages/scripts/dev.sh"
+    "destroy": "packages/scripts/destroy.sh"
   }
 }

@@ -9,6 +9,7 @@ if [[ ! "$response" =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
-(cd deploy/dev/cluster && bun run destroy)
-(cd deploy/dev/components && bun run destroy)
+# Reverse Order
 (cd deploy/dev/configurations && bun run destroy)
+(cd deploy/dev/components && bun run destroy)
+(cd deploy/dev/cluster && bun run destroy)
