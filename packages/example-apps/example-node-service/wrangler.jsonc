@@ -1,8 +1,0 @@
-{
-  "compatibility_date": "2025-08-07",
-  "main": "main.ts",
-  "name": "example-service",
-  "dev": {
-    "ip": "0.0.0.0"
-  }
-}
